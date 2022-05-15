@@ -9,8 +9,5 @@
     "password": "cityslicka"
 }
 
-### Pesquisa só é feita quando usuário está logado
+### Ao realizar login a página deve carregar a pesquisa na API, caso a pesquisa não tenha sido feita, pode-se apertar o botão de busca no youtube para fazer a pesquisa
 
-Pesquisar: Abu
-
-### A logo do youtube na parte esquerda superior volta para o Home
