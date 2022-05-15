@@ -385,19 +385,58 @@
                 display: flex;
                 flex-direction: row;
 
-                font-size: 1.8rem;
                 align-items: center;
 
                 margin-top: 16px;
             }
 
-            .results-container div{
+            .results-container div h3{
+                font-size: 1.8rem;
+                color: white;
+            }
+
+            .results-container div p{
+                font-size: 1.4rem;
+                color: #aaaaaa;
+            }
+
+            .results-container img{
                 height: 166px;
                 width: 300px;
 
                 margin-right: 16px;
 
                 background: #aaaaaa;
+            }
+
+            .pages-container {
+                display: flex;
+
+                justify-content: center;
+
+                margin-left: 240px;
+            }
+
+            .pages-container div{
+                width: 80px;
+            }
+
+            .pages-container button {
+                background-color: #323333;
+
+                width: 90px;
+
+                border-radius:5px;
+
+                color: #fff;
+                font-weight: 600;
+
+                padding: 10px 15px 10px 15px;
+
+                align-items: center;
+                justify-content: center;
+
+                cursor: pointer;
             }
 
             @media only screen and (max-width: 390px) {
@@ -727,7 +766,7 @@
             <div class="slash"></div>
         </div>
 
-        <div class="videos-grid" id="grid-container">
+        <!-- <div class="videos-grid" id="grid-container">
             <div class="video-container">
                 <div class="video"></div>
                 <div class="title-container">
@@ -871,11 +910,16 @@
                     </div>
                 </div>
             </div>
+        </div> -->
+
+        <div class="pages-container">
+            <button id="previousPage">Voltar</button> 
+            <div></div>
+            <button id="nextPage">Próximo</button>
         </div>
 
         <ul class="results-container" id="search-result">
         </ul>
-        
     </body>
     <script type="text/javascript" charset="utf-8">
         var userButton = document.getElementById('login-button');
@@ -886,61 +930,14 @@
         var sliderContainer = document.getElementById('slider-container');
         var homeButton = document.getElementById('home-button');
         var container = document.getElementById('search-result');
+        var previousButton = document.getElementById('previousPage');
+        var nextButton = document.getElementById('nextPage');
         let userToken = localStorage.getItem("userToken");
         loginMenu.style.display = "none";
-
-        homeButton.addEventListener("click", function () {
-            container.style.display = "none";
-            gridContainer.style.display = "grid ";
-            sliderContainer.style.display = "block";
-            loginMenu.style.display = "none";
-        });
-
-        searchButton.addEventListener("click", function() {         
-            let userToken = localStorage.getItem("userToken");
-
-            if (userToken !== null) {
-                var searchValue = document.getElementById('search-input').value;
-                
-
-                axios.get('https://api.disneyapi.dev/characters').then( async function(res) {
-                    let results = res.data.data;
-                    
-                    results.forEach(function (item, index, array) {
-                        if(item.name === searchValue){
-                            gridContainer.style.display = "none";
-                            sliderContainer.style.display = "none";
-                            loginMenu.style.display = "none";
-                            
-                            deleteChild();
-
-                            item.films.forEach(function (item, index, arr) {
-                                var li = document.createElement('li');
-                                var div = document.createElement('div');
-                                li.appendChild(div);
-                                li.innerHTML = li.innerHTML + item;
-                                container.appendChild(li);
-                            });
-
-                            item.shortFilms.forEach(function (item, index, arr) {
-                                var li = document.createElement('li');
-                                var div = document.createElement('div');
-                                li.appendChild(div);
-                                li.innerHTML = li.innerHTML + item;
-                                container.appendChild(li);
-                            });
-
-                            item.videoGames.forEach(function (item, index, arr) {
-                                var li = document.createElement('li');
-                                var div = document.createElement('div');
-                                li.appendChild(div);
-                                li.innerHTML = li.innerHTML + item;
-                                container.appendChild(li);
-                            });
-
-                        }
-                    })
-                })
+        
+        searchButton.addEventListener("click", function() {        
+            if(userToken !== null){
+                showItens();
             }
         });
 
@@ -974,42 +971,82 @@
             let userToken = localStorage.getItem("userToken");
 
             if(userToken !==  null){
+                localStorage.clear();
+
                 email.style.display = "flex";
                 password.style.display = "flex";
                 loginButton.innerHTML = "Entrar";
 
-                localStorage.clear();
-
-                console.log("alo")
             } else {
                 if (emailValue === "" || passwordValue === "") {
                     errorLog.textContent = 'Todos os campos devem ser preenchidos';
-                } else if(emailValue.length <= 3) {
-                    errorLog.textContent = 'Este e-mail não é válido';
+                } else if(emailValue.length <= 3 || passwordValue.length <= 3) {
+                    errorLog.textContent = 'E-mail ou senha não válidos';
                 } else {
                     axios.post('https://reqres.in/api/login', {
                         email: emailValue,
                         password: passwordValue
                     }).then( function(res) {
-                        localStorage.setItem("userToken", res.data.token);
+                            localStorage.setItem("userToken", res.data.token);
 
-                        email.style.display = "none";
-                        password.style.display = "none";
-                        loginButton.innerHTML = "Sair";
+                            errorLog.textContent = '';
+    
+                            email.style.display = "none";
+                            password.style.display = "none";
+                            loginButton.innerHTML = "Sair";
+                            showItens();
+                    }).catch( function(e) {
+                        errorLog.textContent = 'Credenciais inválidas';
                     });
-                }
+                }   
             }
         });
 
-        function deleteChild() {
-            console.log("deletei")
-            var e = document.getElementById('search-result');
-            var firstElement = e.firstElementChild;
+        nextButton.addEventListener('click', function (){
+            let page = localStorage.getItem('nextPage');
+            console.log(page)
+            showItens(page);
+        });
 
-            while (firstElement) {
-                firstElement.remove();
-                firstElement.firstElementChild;
-            }
+        previousButton.addEventListener('click', function (){
+            let page = localStorage.getItem('previousPage');
+            showItens(page);
+        });
+
+        function showItens(pageSelector) {
+            deleteChild();
+            axios.get(pageSelector ? pageSelector : 'https://api.disneyapi.dev/characters').then( function(res) {
+                    let results = res.data.data;
+
+                    localStorage.setItem('nextPage', res.data.nextPage);
+                    localStorage.setItem('previousPage', res.data.previousPage ? res.data.previousPage : null);
+                    results.forEach(function (item, index, array) {            
+                        var li = document.createElement('li');
+                        var div = document.createElement('div');
+                        var img = document.createElement('img');
+                        var h3 = document.createElement('h3');
+                        var p = document.createElement('p');
+
+                        h3.innerHTML = item.name;
+                        p.innerHTML = "ID:" + item._id;
+                        div.appendChild(h3);
+                        div.appendChild(p);
+
+                        img.src = item.imageUrl;
+
+                        li.appendChild(img);
+                        li.appendChild(div);
+
+                        container.appendChild(li);
+
+                        
+                    })
+                })
+        }
+
+        function deleteChild() {
+            var e = document.getElementById('search-result');
+            e.innerHTML = "";
         }
     </script>
 </html>
